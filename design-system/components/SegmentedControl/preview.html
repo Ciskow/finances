@@ -1,0 +1,31 @@
+<!-- @dsCard group="Navigation" height=72 -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>SegmentedControl preview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="fin-stage">
+  <div class="fin-seg" role="group" aria-label="Filtrar contas" style="width:320px">
+    <button class="fin-seg-item" aria-pressed="true">Todas</button>
+    <button class="fin-seg-item" aria-pressed="false">Pendentes</button>
+    <button class="fin-seg-item" aria-pressed="false">Pagas</button>
+  </div>
+  <div class="fin-seg" role="group" aria-label="Base do cálculo" style="width:320px">
+    <button class="fin-seg-item" aria-pressed="true">Só meu salário</button>
+    <button class="fin-seg-item" aria-pressed="false">Salário do casal</button>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.fin-seg').forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      var b = e.target.closest('.fin-seg-item'); if (!b) return;
+      g.querySelectorAll('.fin-seg-item').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    });
+  });
+</script>
+</body>
+</html>

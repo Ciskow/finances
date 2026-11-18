@@ -1,0 +1,64 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Finanças</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--surface); color:var(--ink); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .blk { rx:var(--radius-lg); }
+  .primary { fill:var(--primary); }
+  .deep { fill:var(--primary-deep); }
+  .partner { fill:var(--partner); }
+  .inverse { fill:var(--inverse); }
+  .soft { fill:var(--primary-soft); }
+  .on-inv { fill:var(--on-inverse); }
+  .on-part { fill:var(--on-partner); }
+  .track { fill:var(--track); }
+  .positive { fill:var(--positive); }
+  .words { position:absolute; left:var(--space-6); bottom:var(--space-6); max-width:440px; }
+  .name { margin:0; font-size:88px; line-height:.95; font-weight:700; letter-spacing:-.03em; color:var(--ink); }
+  .tag { margin:var(--space-2) 0 0 4px; font-size:14px; line-height:20px; color:var(--ink-muted); }
+</style>
+<link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      primary 176×224 bled off the top (the action blue, largest) · primary-deep 112×96 · partner 112×80 (the second person) · inverse 192 tall bleeding off the right edge · positive only as the last bar segment (it only ever means "leftover") — ≈30% of 960×288
+  arrangement one tall primary slab with two stacked satellites and an inverse slab, bottoms on one line; gutters space-4
+  pattern     pills, from "bars, badges and anything that floats use radius-full": space-3-tall pills at a space-6 pitch laid on the blocks like list rows, and one full salary-breakdown bar (deep · primary · track · positive) on the ground beneath them
+  scales      sides in space-4 multiples; gutters space-4; pill height space-3, pitch space-6, bar gaps space-1; corners radius-lg, pill rx half of space-3
+-->
+<rect class="primary blk" x="16" y="-16" width="176" height="224" rx="16"/>
+<rect class="deep blk" x="208" y="16" width="112" height="96" rx="16"/>
+<rect class="partner blk" x="208" y="128" width="112" height="80" rx="16"/>
+<rect class="inverse blk" x="336" y="16" width="176" height="192" rx="16"/>
+<rect class="soft" x="32" y="128" width="48" height="12" rx="6"/>
+<rect class="soft" x="32" y="152" width="112" height="12" rx="6"/>
+<rect class="soft" x="32" y="176" width="80" height="12" rx="6"/>
+<rect class="soft" x="224" y="80" width="64" height="12" rx="6"/>
+<rect class="on-part" x="224" y="176" width="48" height="12" rx="6"/>
+<rect class="on-inv" x="352" y="128" width="40" height="12" rx="6"/>
+<rect class="on-inv" x="352" y="152" width="96" height="12" rx="6"/>
+<rect class="on-inv" x="352" y="176" width="64" height="12" rx="6"/>
+<rect class="deep" x="16" y="240" width="112" height="12" rx="6"/>
+<rect class="primary" x="132" y="240" width="204" height="12" rx="6"/>
+<rect class="track" x="340" y="240" width="28" height="12" rx="6"/>
+<rect class="positive" x="372" y="240" width="124" height="12" rx="6"/>
+</svg>
+</div>
+<div class="words">
+  <h1 class="name">Finanças</h1>
+  <p class="tag">O dinheiro da casa, claro e em dia.</p>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!-- @dsCard group="Forms" height=132 -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Field preview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="fin-stage" style="align-items:flex-start">
+  <div class="fin-field" style="width:220px"><label class="fin-label" for="f1">Descrição</label><input class="fin-input" id="f1" value="Condomínio"></div>
+  <div class="fin-field" style="width:140px"><label class="fin-label" for="f2">Valor</label><input class="fin-input fin-input-money" id="f2" inputmode="decimal" placeholder="0,00"><span class="fin-hint">Em reais</span></div>
+  <div class="fin-field" style="width:160px"><label class="fin-label" for="f3">Categoria</label><select class="fin-input" id="f3"><option>Moradia</option><option>Cartão</option><option>Saúde</option></select></div>
+  <div class="fin-field fin-field-error" style="width:200px"><label class="fin-label" for="f4">Dia de vencimento</label><input class="fin-input" id="f4" value="35"><span class="fin-hint">Informe um dia entre 1 e 31</span></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+# Substitua o serviço "financialApp" no seu docker-compose principal por este:
+
+   financialApp:
+    container_name: financial
+    build: /config/finances
+    pull_policy: build
+    image: financas-app:latest
+    ports:
+      - "8182:8182"
+    environment:
+      - PORT=8182
+      - DATA_FILE_PATH=/data/db.json
+    volumes:
+      - /f/ciskowserver/config/finances/data:/data
+    restart: unless-stopped
