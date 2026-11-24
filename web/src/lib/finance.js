@@ -12,7 +12,23 @@ export const DEF_DB = {
 };
 
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-export const num = (v) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : 0; };
+/**
+ * Reads a number typed the Brazilian way: "1.500,00", "1500,5", "R$ 2.455" all work.
+ * With a comma, dots are thousands separators. Without one, a dot followed by exactly
+ * three digits ("1.500") is also read as thousands; any other dot is a decimal point.
+ */
+export const num = (v) => {
+  if (typeof v === 'number') return isFinite(v) ? v : 0;
+  let s = String(v ?? '').replace(/R\$|US\$|[\s   ]/g, '').replace('−', '-');
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  const n = parseFloat(s);
+  return isFinite(n) ? n : 0;
+};
+/** A stored amount written back into an input the way it is typed: 1500.5 → "1500,50". */
+export const toInput = (v) => (v == null || v === '' ? '' : Number(v).toLocaleString('pt-BR', { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+/** Same for a plain number such as a rate or hours: 5.425 → "5,425", 8 → "8". */
+export const toInputNum = (v) => (v == null || v === '' ? '' : Number(v).toLocaleString('pt-BR', { useGrouping: false, maximumFractionDigits: 4 }));
 
 // ---------- months ----------
 export const curMonth = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
@@ -41,9 +57,15 @@ export const valBRL = (db, e) => toBRL(db, e.amount, e.currency);
 export function fmt(db, vBRL) {
   if (db.settings.display === 'USD') {
     const v = vBRL / (db.settings.usdRate || 1);
-    return (v < 0 ? '− ' : '') + 'US$ ' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (v < 0 ? '− ' : '') + 'US$ ' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  return (vBRL < 0 ? '− ' : '') + 'R$ ' + Math.abs(vBRL).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (vBRL < 0 ? '− ' : '') + 'R$ ' + Math.abs(vBRL).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+/** Formats an amount in its own currency (for echoing what was typed), not the display currency. */
+export function fmtIn(amount, currency) {
+  return currency === 'USD'
+    ? 'US$ ' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : 'R$ ' + amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 /** Splits a formatted amount so the whole part can be emphasised. */
 export function splitAmount(db, vBRL) {
@@ -70,6 +92,7 @@ function recRows(db, m, family) {
   return db.recurring.filter((t) => recActive(t, m) && !!t.person === family).map((t) => ({
     virt: true, tplId: t.id, id: 'v:' + t.id, desc: t.desc, category: t.category, currency: t.currency || 'BRL',
     dueDay: t.dueDay, amount: recAmount(t, m), paid: !!(t.paid && t.paid[m]),
+    est: t.amounts[m] == null, // copied from an earlier invoice, not yet confirmed for this month
     person: t.person || null, payTo: t.payTo || null, received: !!(t.received && t.received[m]),
   }));
 }
@@ -106,7 +129,8 @@ export function totals(db, m) {
   const renda = ownInc(db, m).reduce((s, e) => s + valBRL(db, e), 0) + fin;
   const desp = exp.reduce((s, e) => s + valBRL(db, e), 0) + fout;
   const pend = exp.filter((e) => !e.paid).reduce((s, e) => s + valBRL(db, e), 0);
-  return { renda, desp, econ: renda - desp, pend, paid: desp - pend, count: exp.length, paidCount: exp.filter((e) => e.paid).length, famIn: fin, famOut: fout };
+  const est = exp.filter((e) => e.est).reduce((s, e) => s + valBRL(db, e), 0);
+  return { renda, desp, econ: renda - desp, pend, paid: desp - pend, est, count: exp.length, paidCount: exp.filter((e) => e.paid).length, famIn: fin, famOut: fout };
 }
 export function famReceivable(db, m) {
   return db.entries.filter((e) => e.mirror && !e.paid && e.month === m).reduce((s, e) => s + valBRL(db, e), 0)
@@ -281,7 +305,7 @@ export function editRecurring(db, tplId, view, form, scope = 'future') {
   const nextBefore = recAmount(t, next);
   const changed = form.amount !== recAmount(t, view);
   Object.assign(t, { desc: form.desc, category: form.category, currency: form.currency, dueDay: form.dueDay, person: form.person || null, payTo: form.person ? null : form.payTo || null });
-  if (!changed) return; // same value: leave every month's amount as it is
+  if (!changed) { t.amounts[view] = form.amount; return; } // same value: confirms this month's estimate, other months untouched
   t.amounts[view] = form.amount;
   if (scope === 'one') {
     if (t.amounts[next] == null) t.amounts[next] = nextBefore;
@@ -320,7 +344,7 @@ export function normalize(db) {
 export const LEDGER_KINDS = [
   { value: 'loan', label: 'Emprestei dinheiro' },
   { value: 'borrowCash', label: 'Peguei dinheiro emprestado' },
-  { value: 'borrow', label: 'Pagou algo por mim' },
+  { value: 'borrow', label: 'A pessoa pagou algo por mim' },
   { value: 'shared', label: 'Despesa dividida' },
   { value: 'repay', label: 'Recebi um pagamento avulso' },
   { value: 'payback', label: 'Fiz um pagamento avulso' },

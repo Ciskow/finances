@@ -92,7 +92,7 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 /* MonthSwitcher */
 .fin-month { display: flex; align-items: center; gap: var(--space-2); }
 .fin-month-title { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0 0 0 var(--space-2); padding: 0; border: 0; background: none; font: 600 28px/34px var(--font-sans); letter-spacing: -.01em; color: var(--ink); text-transform: capitalize; cursor: pointer; }
-.fin-month-year { font-weight: 400; color: var(--ink-faint); }
+.fin-month-year { font-weight: 400; color: var(--ink-muted); }
 .fin-month-title svg { width: 16px; height: 16px; color: var(--ink-muted); }
 
 /* TabBar */

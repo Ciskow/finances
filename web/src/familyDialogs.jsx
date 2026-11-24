@@ -12,13 +12,14 @@ export function netText(person, net, money) {
 }
 
 export function LedgerDialog() {
-  const { db, view, dialog, closeDialog, update, toast, money } = useApp();
+  const { db, view, dialog, closeDialog, commit, money } = useApp();
   const people = F.familyPeople(db);
   const existing = dialog.id ? db.ledger.find((t) => t.id === dialog.id) : null;
   const [f, setF] = useState(() => (existing
-    ? { person: existing.person, kind: existing.kind, desc: existing.desc || '', amount: String(existing.amount), currency: existing.currency || 'BRL',
-        date: existing.date, month: F.txMonth(existing), paidBy: existing.paidBy || 'me', myShare: String(existing.myShare == null ? 50 : existing.myShare) }
+    ? { person: existing.person, kind: existing.kind, desc: existing.desc || '', amount: F.toInput(existing.amount), currency: existing.currency || 'BRL',
+        date: existing.date, month: F.txMonth(existing), paidBy: existing.paidBy || 'me', myShare: F.toInputNum(existing.myShare == null ? 50 : existing.myShare) }
     : { person: dialog.person || people[0] || '', kind: 'loan', desc: '', amount: '', currency: 'BRL', date: F.todayISO(), month: view, paidBy: 'me', myShare: '50' }));
+  const [start] = useState(() => JSON.stringify(f));
   const [errors, setErrors] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(false);
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
@@ -38,13 +39,11 @@ export function LedgerDialog() {
     if (shared && (String(f.myShare).trim() === '' || F.num(f.myShare) < 0 || F.num(f.myShare) > 100)) errs.myShare = 'Informe de 0 a 100';
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    update((d) => F.saveTx(d, existing && existing.id, { ...draft, desc: draft.desc || F.ledgerKindLabel(f.kind) }));
-    toast(existing ? 'Alterações salvas' : 'Lançamento registrado');
+    commit((d) => F.saveTx(d, existing && existing.id, { ...draft, desc: draft.desc || F.ledgerKindLabel(f.kind) }), existing ? 'Alterações salvas' : 'Lançamento registrado');
     closeDialog();
   }
   function remove() {
-    update((d) => F.deleteTx(d, existing.id));
-    toast('Lançamento excluído');
+    commit((d) => F.deleteTx(d, existing.id), 'Lançamento excluído');
     closeDialog();
   }
 
@@ -67,7 +66,7 @@ export function LedgerDialog() {
     </>
   );
   return (
-    <Modal title={existing ? 'Editar lançamento com a família' : 'Novo lançamento com a família'} onClose={closeDialog} footer={footer} onSubmit={submit}>
+    <Modal title={existing ? 'Editar lançamento com a família' : 'Novo lançamento com a família'} onClose={closeDialog} footer={footer} onSubmit={submit} dirty={JSON.stringify(f) !== start}>
       <div className="form-grid">
         <Field label="Pessoa" htmlFor="lg-person" error={errors.person}>
           <select id="lg-person" className="fin-input" value={f.person} onChange={set('person')}>
@@ -88,7 +87,7 @@ export function LedgerDialog() {
           </div>
         )}
         <Field label={shared ? 'Valor total da despesa' : 'Valor'} htmlFor="lg-val" error={errors.amount}>
-          <input id="lg-val" className="fin-input fin-input-money" inputMode="decimal" value={f.amount} onChange={set('amount')} placeholder="0,00" autoFocus />
+          <input id="lg-val" className="fin-input fin-input-money" inputMode="decimal" value={f.amount} onChange={set('amount')} placeholder="0,00" data-autofocus="" onFocus={(e) => e.target.select()} />
         </Field>
         {shared ? (
           <Field label="Minha parte (%)" htmlFor="lg-share" hint="50 divide meio a meio" error={errors.myShare}>
@@ -110,7 +109,7 @@ export function LedgerDialog() {
         </Field>
       </div>
       {draft.amount > 0 && (
-        <p className="note" role="status">
+        <p className="note">
           {Math.abs(effect) < 0.005 ? 'Este lançamento não muda o saldo.'
             : effect > 0 ? `Com ${who}: ${money(effect)} a seu favor.`
             : `Com ${who}: ${money(-effect)} a favor de ${who}.`}
@@ -124,14 +123,13 @@ export function LedgerDialog() {
 
 /** Settle everything with one person as of the viewed month. */
 export function SettleDialog() {
-  const { db, view, dialog, closeDialog, update, toast, money } = useApp();
+  const { db, view, dialog, closeDialog, commit, money } = useApp();
   const p = dialog.person;
   const b = F.personBalance(db, p, view);
   // What will count in my totals: received bills and a positive ledger come in; a negative ledger goes out.
   const cashIn = b.covered + Math.max(0, b.ledger), cashOut = Math.max(0, -b.ledger);
   const run = () => {
-    update((d) => F.settlePerson(d, p, view));
-    toast(`Contas com ${p} quitadas`);
+    commit((d) => F.settlePerson(d, p, view), `Contas com ${p} quitadas`);
     closeDialog();
   };
   const footer = (
@@ -146,11 +144,11 @@ export function SettleDialog() {
     <Modal title={`Quitar contas com ${p}`} onClose={closeDialog} footer={footer} onSubmit={run}>
       <p className="confirm-text"><strong>{netText(p, b.net, money).text}</strong>, somando tudo até {F.mLabel(view)}.</p>
       <ul className="settle-list">
-        <li><span>Contas que você cobriu, ainda em aberto ({b.open.length})</span><strong className="fin-num">{money(b.covered)}</strong></li>
-        <li><span>Empréstimos, pagamentos e despesas divididas</span><strong className="fin-num">{money(b.ledger)}</strong></li>
+        {b.open.length > 0 && <li><span>Contas que você cobriu, ainda em aberto ({b.open.length})</span><strong className="fin-num">{money(b.covered)}</strong></li>}
+        {Math.abs(b.ledger) >= 0.005 && <li><span>Empréstimos, pagamentos e despesas divididas</span><strong className="fin-num">{money(b.ledger)}</strong></li>}
         {b.offsets.length > 0 && <li><span>Suas despesas pagas a {p} ({b.offsets.length})</span><strong className="fin-num">{money(-b.offset)}</strong></li>}
       </ul>
-      <p className="fin-hint">Ao confirmar, as contas em aberto são marcadas como recebidas e os empréstimos e dívidas em aberto, como pagos. O saldo com {p} volta a zero. {cashIn > 0.005 && ` Entram na sua renda de ${F.mLabel(view)}: ${money(cashIn)}.`}{cashOut > 0.005 && ` Saem do seu saldo de ${F.mLabel(view)}: ${money(cashOut)}.`}{b.offset > 0.005 && ` Suas despesas pagas a ${p} (${money(b.offset)}) já contam nas suas despesas e só são abatidas.`}</p>
+      <p className="settle-effect">Ao confirmar, as contas em aberto são marcadas como recebidas e os empréstimos e dívidas em aberto, como pagos. O saldo com {p} volta a zero e você pode desfazer logo em seguida. {cashIn > 0.005 && ` Entram na sua renda de ${F.mLabel(view)}: ${money(cashIn)}.`}{cashOut > 0.005 && ` Saem do seu saldo de ${F.mLabel(view)}: ${money(cashOut)}.`}{b.offset > 0.005 && ` Suas despesas pagas a ${p} (${money(b.offset)}) já contam nas suas despesas e só são abatidas.`}</p>
     </Modal>
   );
 }

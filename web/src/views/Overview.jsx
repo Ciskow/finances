@@ -1,20 +1,21 @@
 import { useState } from 'react';
-import { Plus, RotateCcw, TrendingDown, TrendingUp } from 'lucide-react';
+import { CircleCheck, Plus, RotateCcw, TrendingDown, TrendingUp } from 'lucide-react';
 import { useApp } from '../store.jsx';
 import * as F from '../lib/finance.js';
 import { Amount, Badge, Bar, Card, cx, Empty, IconButton } from '../ui.jsx';
-import { BonusForm, ExpenseList, FamilyPeople, IncomeList, RecurringList, SalaryBox } from '../parts.jsx';
+import { ExpenseList, FamilyPeople, IncomeList, RecurringList, SalaryBox } from '../parts.jsx';
 
 const pct = (v, total) => (total > 0 ? Math.round((v / total) * 100) : 0);
 
 /** Opening balance: typed value, or carried over from the previous month. Commits on blur or Enter. */
 function SaldoInput({ value, manual }) {
   const { view, update } = useApp();
-  const [text, setText] = useState(value.toFixed(2));
+  const [text, setText] = useState(() => F.toInput(value));
   const commit = () => { if (F.num(text) !== +value.toFixed(2)) update((d) => F.setSaldo(d, view, F.num(text))); };
   return (
     <span className="saldo-edit">
-      <input className="fin-input fin-input-money" type="number" step="0.01" value={text} aria-label="Saldo inicial em reais"
+      <input className="fin-input fin-input-money" inputMode="decimal" value={text} aria-label={`Saldo inicial de ${F.mLabel(view)}, em reais${manual ? '' : ' (automático)'}`}
+        onFocus={(e) => e.target.select()}
         onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }} />
       {manual && <IconButton label="Voltar ao saldo automático" onClick={() => update((d) => F.setSaldo(d, view, null))}><RotateCcw /></IconButton>}
     </span>
@@ -27,15 +28,18 @@ function Hero() {
   const si = F.saldoIni(db, view), sf = si + t.renda - t.desp;
   const manual = F.saldoIsManual(db, view);
   const sobra = Math.max(0, t.econ);
+  const freePct = pct(t.econ, t.renda);
   return (
     <Card title="Saldo previsto" sub={`no fim de ${F.mLabel(view)}`} className="g-hero">
       <div className="hero-top">
-        <Amount value={sf} size="xl" tone={sf < 0 ? 'negative' : undefined} />
+        <Amount value={sf} size="xl" tone={sf < 0 ? 'negative' : undefined} partEstimate={t.est > 0.005} />
         <div className="hero-note">
           {t.renda <= 0 ? <span className="muted">Nenhuma renda lançada neste mês</span>
-            : t.econ >= 0 ? <span className="pos trend"><TrendingUp />{pct(t.econ, t.renda)}% da renda livre</span>
-            : <span className="neg trend"><TrendingDown />Despesas {pct(-t.econ, t.renda)}% acima da renda</span>}
+            : t.econ < 0 ? <span className="neg trend"><TrendingDown aria-hidden="true" />Faltam {money(-t.econ)}: despesas {pct(-t.econ, t.renda)}% acima da renda</span>
+            : freePct < 5 ? <span className="trend">Sobram {money(t.econ)}, {freePct}% da renda</span>
+            : <span className="pos trend"><TrendingUp aria-hidden="true" />Sobram {money(t.econ)}, {freePct}% da renda</span>}
           <span className="fin-card-sub">saldo inicial + renda − despesas, depois de pagar todas as contas</span>
+          {t.est > 0.005 && <span className="est-note">Inclui ≈ {money(t.est)} de cartões ainda estimados pela fatura anterior</span>}
         </div>
       </div>
       <Bar label={`Da renda: ${pct(t.paid, t.renda)}% em despesas pagas, ${pct(t.pend, t.renda)}% em despesas pendentes, ${pct(sobra, t.renda)}% de sobra`}
@@ -67,7 +71,7 @@ function Hero() {
 }
 
 function Bills() {
-  const { db, view, money } = useApp();
+  const { db, view, money, goMonth } = useApp();
   const [day, setDay] = useState(null);
   const all = [...F.ownExp(db, view), ...F.famExp(db, view)].sort((a, b) => (a.dueDay || 99) - (b.dueDay || 99));
   const unpaid = all.filter((e) => !e.paid);
@@ -75,11 +79,28 @@ function Bills() {
   const famPending = unpaid.filter((e) => e.person).reduce((s, e) => s + F.valBRL(db, e), 0);
   const days = [...new Set(all.map((e) => e.dueDay).filter(Boolean))].sort((a, b) => a - b);
   const rows = day == null ? all : all.filter((e) => e.dueDay === day);
+  const settled = unpaid.length === 0 && all.length > 0;
+  const t = F.totals(db, view);
+  const nextOpen = F.earliestUnpaid(db);
+  const next = nextOpen > view ? nextOpen : F.addM(view, 1);
+  const pendEst = unpaid.some((e) => e.est);
+  if (settled) {
+    const label = F.mLabel(view);
+    return (
+      <Card title="Contas a pagar" sub={`${all.length} de ${all.length} pagas`} className="g-bills settled">
+        <p className="settled-mark"><CircleCheck aria-hidden="true" />{label[0].toUpperCase() + label.slice(1)} quitado</p>
+        <Amount value={t.econ} size="lg" tone={t.econ < 0 ? 'negative' : 'positive'} />
+        <p className="fin-card-sub under">{t.econ < 0 ? 'faltou no mês, com todas as contas pagas' : 'sobra do mês, com todas as contas pagas'}</p>
+        <button type="button" className="fin-btn settled-next" onClick={() => goMonth(next)}>Ir para {F.mLabel(next)}</button>
+        <div className="scroll-list"><ExpenseList rows={all} actions={false} /></div>
+      </Card>
+    );
+  }
   return (
     <Card title="Contas a pagar" sub={`${all.length - unpaid.length} de ${all.length} pagas`} className="g-bills">
-      <Amount value={pending} size="lg" />
+      <Amount value={pending} size="lg" partEstimate={pendEst} />
       <p className="fin-card-sub under">
-        {unpaid.length === 0 && all.length > 0 ? 'Tudo pago neste mês' : `falta pagar${famPending > 0 ? `, incluindo ${money(famPending)} de contas da família` : ''}`}
+        {famPending > 0 ? `falta pagar: ${money(pending - famPending)} suas e ${money(famPending)} da família` : 'falta pagar'}
       </p>
       {days.length > 0 && (
         <div className="day-chips" role="group" aria-label="Filtrar por dia de vencimento">
@@ -96,7 +117,7 @@ function Bills() {
           })}
         </div>
       )}
-      <div className="scroll-list"><ExpenseList rows={rows} actions={false} /></div>
+      <div className="scroll-list"><ExpenseList rows={rows} actions={false} empty={all.length ? 'Nenhuma conta vence neste dia.' : undefined} /></div>
     </Card>
   );
 }
@@ -105,8 +126,9 @@ function Categories() {
   const { db, view, money } = useApp();
   const cats = F.byCategory(db, view);
   const total = cats.reduce((s, c) => s + c.value, 0);
-  const top = cats.slice(0, 6);
-  const rest = cats.slice(6).reduce((s, c) => s + c.value, 0);
+  // Up to seven rows: with eight or more categories, the smallest are grouped in one line.
+  const top = cats.length <= 7 ? cats.slice() : cats.slice(0, 6);
+  const rest = cats.length <= 7 ? 0 : cats.slice(6).reduce((s, c) => s + c.value, 0);
   if (rest > 0) top.push({ name: `Outras ${cats.length - 6} categorias`, value: rest });
   const max = Math.max(...top.map((c) => c.value), 1);
   return (
@@ -129,16 +151,17 @@ function Categories() {
 }
 
 function Income() {
-  const { db, view } = useApp();
+  const { db, view, setPage } = useApp();
   const inc = F.ownInc(db, view);
   const t = F.totals(db, view);
+  const salary = F.salaryInfo(db, view);
   return (
-    <Card title="Renda" sub={`${inc.filter((e) => e.paid).length} de ${inc.length} recebidas`} className="g-third">
+    <Card title="Renda" sub={`${inc.filter((e) => e.paid).length} de ${inc.length} recebidas`} className="g-third"
+      action={<button type="button" className="fin-btn fin-btn-ghost" onClick={() => setPage('income')}>Ver renda</button>}>
       <Amount value={t.renda} size="lg" tone="positive" />
       <p className="fin-card-sub under">entradas do mês</p>
       <div className="list"><IncomeList actions={false} /></div>
-      <SalaryBox />
-      <BonusForm />
+      {!salary.exists && <SalaryBox />}
     </Card>
   );
 }
@@ -167,19 +190,16 @@ function Upcoming() {
   const y = (v) => 10 + (1 - v / max) * 44;
   return (
     <Card title="Próximos meses" sub="despesas já previstas" className="g-third">
-      <Amount value={data[0].desp} size="lg" />
-      <p className="fin-card-sub under">em {F.mLabel(view)}, com parcelas e cartões recorrentes</p>
-      <p className="fin-overline">Próximas faturas</p>
       <div className="upcoming">
         <svg className="upcoming-line" viewBox="0 0 300 64" preserveAspectRatio="none" aria-hidden="true">
           <polyline points={data.map((d, i) => `${50 + i * 100},${y(d.desp)}`).join(' ')} fill="none" vectorEffect="non-scaling-stroke" />
         </svg>
         {data.map((d, i) => (
-          <button type="button" key={d.m} className="upcoming-tile" aria-pressed={i === 0} onClick={() => goMonth(d.m)}
-            title={i === 0 ? undefined : `Ir para ${F.mLabel(d.m)}`}>
+          <button type="button" key={d.m} className="upcoming-tile" aria-current={i === 0 ? 'date' : undefined} onClick={() => goMonth(d.m)}
+            aria-label={`${F.mLabel(d.m)}: despesas ${money(d.desp)}${d.est > 0.005 ? ', parte estimada' : ''}, ${d.econ < 0 ? 'falta' : 'sobra'} ${money(Math.abs(d.econ))}${i === 0 ? ' (mês aberto)' : ''}`}>
             <span className="upcoming-month">{F.monthShort(d.m)} {i > 0 && d.m.slice(2, 4)}</span>
             <i className="upcoming-dot" style={{ top: y(d.desp) + 28 }} aria-hidden="true" />
-            <span className="upcoming-value fin-num">{money(d.desp)}</span>
+            <span className={cx('upcoming-value fin-num', d.est > 0.005 && 'est')}>{d.est > 0.005 && '≈ '}{money(d.desp)}</span>
             <span className={cx('upcoming-econ fin-num', d.econ < 0 ? 'neg' : 'pos')}>{d.econ < 0 ? 'falta ' : 'sobra '}{money(Math.abs(d.econ))}</span>
           </button>
         ))}
@@ -194,7 +214,7 @@ function Recurring() {
   return (
     <Card title="Cartões recorrentes" sub={`${n} ${n === 1 ? 'ativo' : 'ativos'}`} className="g-third"
       action={<button type="button" className="fin-btn fin-btn-ghost" onClick={() => setPage('expenses')}>Ver todos</button>}>
-      <div className="list"><RecurringList /></div>
+      <div className="list"><RecurringList actions={false} /></div>
     </Card>
   );
 }

@@ -39,7 +39,9 @@ svg { flex: none; }
 .month-pick { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
 .today { font-weight: 500; }
 .currency .fin-seg-item { min-width: 44px; }
-.save-state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
+.save-state { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; font: 400 12px/16px var(--font-sans); color: var(--ink-muted); white-space: nowrap; }
+button.save-state { min-height: 32px; padding: 0 var(--space-2); border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
+button.save-state:hover { background: var(--danger-soft); }
 .save-state i { width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--positive); }
 .save-state.dirty i { background: var(--ink-faint); }
 .save-state.error { color: var(--danger-ink); }
@@ -61,7 +63,7 @@ svg { flex: none; }
 .page { display: flex; flex-direction: column; gap: var(--space-4); }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); }
 .stat { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-5); }
-.page-actions { display: flex; justify-content: flex-end; }
+.page-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); }
 
 /* hero */
 .hero-top { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-2) 0 var(--space-6); }
@@ -91,7 +93,7 @@ svg { flex: none; }
 .fin-row.row[data-done="true"] .fin-row-amount.fin-row-amount { color: var(--ink-muted); }
 .fin-row.row[data-done="false"] .fin-row-amount.pos { color: var(--positive-ink); }
 .fin-row.row[data-done="false"] .fin-row-amount.neg { color: var(--danger-ink); }
-.icon-btn { display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink-muted); cursor: pointer; }
+.icon-btn { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink-muted); cursor: pointer; }
 .icon-btn svg { width: 16px; height: 16px; }
 .icon-btn:hover { background: var(--surface-sunken); color: var(--ink); }
 .icon-btn-danger:hover { background: var(--danger-soft); color: var(--danger-ink); }
@@ -125,21 +127,24 @@ svg { flex: none; }
 .person-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
 .person-name { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 600; font-size: 15px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.two-checks-head { display: flex; gap: var(--space-3); margin-top: var(--space-3); font-size: 11px; line-height: 14px; color: var(--ink-muted); }
-.two-checks-head span, .check-col { display: inline-flex; justify-content: center; width: 44px; flex: none; }
+.two-checks-head { display: flex; gap: var(--space-3); margin-top: var(--space-3); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.two-checks-head span, .check-col { display: inline-flex; justify-content: center; width: 40px; flex: none; }
 .person .fin-check:not(:checked) { background: var(--surface); }
 
 /* upcoming months */
 .upcoming { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .upcoming-line { position: absolute; left: 0; top: 28px; width: 100%; height: 64px; pointer-events: none; z-index: 1; }
 .upcoming-line polyline { stroke: var(--ink-faint); stroke-width: 1.5; stroke-dasharray: 4 4; }
-.upcoming-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; height: 168px; padding: var(--space-2) var(--space-1) var(--space-3); border: 3px solid var(--surface); border-radius: var(--radius-md); background: var(--surface-sunken); color: var(--ink); font: 400 12px/16px var(--font-sans); cursor: pointer; }
-.upcoming-tile[aria-pressed="true"] { background: var(--primary-soft); box-shadow: inset 0 0 0 1.5px var(--primary); }
+.upcoming { margin-top: var(--space-3); }
+.upcoming-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; height: 136px; padding: var(--space-2) var(--space-1) var(--space-3); border: 3px solid var(--surface); border-radius: var(--radius-md); background: var(--surface-sunken); color: var(--ink); font: 400 12px/16px var(--font-sans); cursor: pointer; }
+.upcoming-tile:hover { background: var(--track); }
+.upcoming-tile[aria-current] { background: var(--primary-soft); box-shadow: inset 0 0 0 1.5px var(--primary); }
 .upcoming-month { font-weight: 600; text-transform: capitalize; }
 .upcoming-dot { position: absolute; left: 50%; z-index: 2; width: 10px; height: 10px; border: 2px solid var(--ink-faint); border-radius: var(--radius-full); background: var(--surface); transform: translate(-50%, -50%); }
-.upcoming-tile[aria-pressed="true"] .upcoming-dot { border-color: var(--primary); }
+.upcoming-tile[aria-current] .upcoming-dot { border-color: var(--primary); }
 .upcoming-value { margin-top: auto; font-size: 13px; font-weight: 600; }
-.upcoming-econ { font-size: 11px; white-space: nowrap; }
+.upcoming-econ { font-size: 12px; white-space: nowrap; }
+.upcoming-value.est { color: var(--warning-ink); }
 
 /* toolbar, tables, forms */
 .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
@@ -147,7 +152,8 @@ svg { flex: none; }
 .search { position: relative; display: flex; flex: 1; min-width: 200px; }
 .search svg { position: absolute; left: 10px; top: 50%; width: 16px; height: 16px; color: var(--ink-muted); transform: translateY(-50%); pointer-events: none; }
 .search .fin-input { height: 36px; padding-left: 34px; }
-.foot-note { margin-top: var(--space-3); }
+.foot-note { max-width: 72ch; margin-top: var(--space-3); }
+.foot-note + .foot-note { margin-top: var(--space-2); }
 .range-pick { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
 .range-pick .fin-field { width: 200px; }
 .table-wrap { margin-top: var(--space-2); overflow-x: auto; }
@@ -206,7 +212,13 @@ svg { flex: none; }
   .mobile-brand .brand { padding: 0; }
   .mobile-tools { display: flex; align-items: center; gap: var(--space-2); }
   .tabbar-fixed { position: fixed; left: var(--space-3); right: var(--space-3); bottom: max(var(--space-3), env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; gap: var(--space-2); }
-  .tabbar-fixed .fin-tab { min-width: 0; padding: 0 2px; font-size: 10px; }
+  .tabbar-fixed .fin-tab { min-width: 0; padding: 0 2px; font-size: 11px; }
+  .topbar-right { display: none; }
+  .scroll-list { max-height: none; overflow: visible; margin: var(--space-2) 0 0; padding: 0; }
+  .mobile-tools .icon-btn { width: 44px; height: 44px; }
+  .mobile-tools .save-state.saved { font-size: 0; gap: 0; }
+  .fin-month .fin-btn-icon { width: 44px; height: 44px; }
+  .fin-month-title { min-height: 44px; }
   .topbar { padding: var(--space-3) var(--space-4); }
   .topbar .fin-month-title { font-size: 22px; line-height: 28px; }
   .g-bills, .g-third { grid-column: span 12; }
@@ -218,7 +230,7 @@ svg { flex: none; }
   .toast { bottom: 96px; }
   .bars-col { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .toast, .more-toggle svg { transition: none; } }
 
 /* ---------- family ledger ---------- */
 .person-net { font-size: 15px; font-weight: 600; text-align: right; }
@@ -230,3 +242,68 @@ svg { flex: none; }
 .settle-list { display: flex; flex-direction: column; gap: var(--space-2); margin: var(--space-4) 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-sunken); }
 .settle-list li { display: flex; justify-content: space-between; gap: var(--space-3); }
 .check-spacer { width: 20px; flex: none; }
+
+/* ---------- accessibility helpers ---------- */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+::selection { background: var(--primary-soft); color: var(--ink); }
+
+/* ---------- amounts and estimates ---------- */
+.amount-visual { display: inline-flex; align-items: baseline; gap: .12em; }
+.amount-approx { margin-right: .06em; font-weight: 500; }
+.amount-approx { color: var(--warning-ink); }
+.fin-row.row[data-done="false"] .fin-row-amount.fin-row-amount.est { color: var(--warning-ink); }
+.est-note { margin-top: var(--space-1); font-size: 12px; line-height: 16px; color: var(--warning-ink); }
+.note.note-estimate { background: var(--warning-soft); color: var(--warning-ink); }
+.rec-mark { display: inline-flex; align-items: center; margin-left: 2px; color: var(--ink-muted); vertical-align: -2px; }
+.rec-mark svg { width: 14px; height: 14px; }
+
+/* ---------- checks: 20px mark, 40x44 hit area that does not move the layout ---------- */
+.check-hit { display: inline-grid; place-items: center; flex: none; width: 40px; height: 44px; margin: -12px -10px; cursor: pointer; }
+
+/* ---------- entry dialog: folded options ---------- */
+.more-toggle { display: inline-flex; align-items: center; gap: var(--space-2); justify-self: start; min-height: 36px; margin: calc(-1 * var(--space-1)) 0; padding: 0 var(--space-2) 0 var(--space-1); border: 0; border-radius: var(--radius-sm); background: none; color: var(--primary-ink); font: 600 13px/20px var(--font-sans); cursor: pointer; }
+.more-toggle:hover { background: var(--surface-sunken); }
+.more-toggle svg { width: 16px; height: 16px; transition: transform .18s cubic-bezier(.2, .7, .2, 1); }
+.more-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.more-grid { margin-top: 0; }
+
+/* ---------- bills: month settled ---------- */
+.settled-mark { display: inline-flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); color: var(--positive-ink); font-weight: 600; }
+.settled-mark svg { width: 18px; height: 18px; }
+.settled-next { align-self: flex-start; margin: var(--space-4) 0 var(--space-2); }
+
+/* ---------- toast with an action ---------- */
+.toast { display: flex; align-items: center; gap: var(--space-3); }
+.toast.show.has-action { pointer-events: auto; padding-right: var(--space-2); }
+.toast-action { min-height: 32px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-full); background: transparent; color: var(--on-inverse); font: 600 14px/20px var(--font-sans); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.toast-action:hover { text-decoration-thickness: 2px; }
+.toast-action:focus-visible { outline-color: var(--on-inverse); }
+
+/* ---------- table: month cell is a real button ---------- */
+.link-btn { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.link-btn::first-letter { text-transform: uppercase; }
+.table tbody tr:hover .link-btn { color: var(--primary-ink); }
+
+/* ---------- segmented items may carry an icon ---------- */
+.fin-seg-item { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.fin-seg-item svg { width: 15px; height: 15px; }
+
+/* ---------- touch: 44px targets ---------- */
+@media (pointer: coarse) {
+  .icon-btn { width: 44px; height: 44px; }
+  .fin-seg-item { min-height: 40px; }
+  .fin-btn { min-height: 44px; }
+  .day-chip { min-width: 52px; height: 48px; }
+}
+
+/* ---------- phones: rows give the label room ---------- */
+@media (max-width: 600px) {
+  .row-actions { display: none; }
+  .fin-row.row-two { display: grid; grid-template-columns: 40px 40px minmax(0, 1fr); column-gap: var(--space-3); row-gap: 2px; align-items: center; }
+  .row-two .check-col { grid-row: 1 / span 2; }
+  .row-two .fin-row-main { grid-column: 3; }
+  .row-two .fin-row-amount { grid-column: 3; text-align: left; }
+}
+
+/* month switcher: status of the open month */
+.month-status { margin-left: var(--space-2); }
